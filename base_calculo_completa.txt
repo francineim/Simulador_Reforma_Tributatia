@@ -1,0 +1,58 @@
+Da Base de Cálculo (IBS/CBS)
+Art. 69. A base de cálculo do IBS e da CBS na importação de bens materiais é o valor aduaneiro acrescido de:
+I - Imposto sobre a Importação;
+II - Imposto Seletivo (IS);
+III - taxa de utilização do Sistema Integrado do Comércio Exterior (Siscomex);
+IV - Adicional ao Frete para a Renovação da Marinha Mercante (AFRMM);
+V - Contribuição de Intervenção no Domínio Econômico incidente sobre a importação e a comercialização de petróleo e seus derivados, gás natural e seus derivados, e álcool etílico combustível (Cide-Combustíveis);
+VI - direitos antidumping;
+VII - direitos compensatórios;
+VIII - medidas de salvaguarda; e
+IX - quaisquer outros impostos, taxas, contribuições ou direitos incidentes sobre os bens importados até a sua liberação.
+§ 1º A base de cálculo do IBS e da CBS na hipótese de que trata o § 2º do art. 71 desta Lei Complementar será o valor que servir ou que serviria de base para o cálculo do Imposto de Importação acrescido dos valores de que tratam o caput, ressalvado o disposto no § 2º deste artigo.
+§ 2º Não compõem a base de cálculo do IBS e da CBS:
+I - O Imposto sobre Produtos Industrializados (IPI), previsto no inciso IV do caput do art. 153 da Constituição Federal;
+II - o Imposto sobre operações relativas à Circulação de Mercadorias e sobre prestações de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação (ICMS), previsto no inciso II do caput do art. 155 da Constituição Federal; e
+III - o Imposto sobre Serviços de Qualquer Natureza (ISS), previsto no inciso III do caput do art. 156 da Constituição Federal.
+Art. 70. Para efeitos de apuração da base de cálculo, os valores expressos em moeda estrangeira deverão ser convertidos em moeda nacional pela taxa de câmbio utilizada para cálculo do Imposto sobre a Importação, sem qualquer ajuste posterior decorrente de eventual variação cambial.
+Parágrafo único. Na hipótese de não ser devido o Imposto sobre a Importação, deverá ser utilizada a taxa de câmbio que seria empregada caso houvesse tributação.
+
+Art. 71. As alíquotas do IBS e da CBS incidentes sobre cada importação de bem material são as mesmas incidentes sobre a aquisição do respectivo bem no País, observadas as disposições próprias relativas à fixação das alíquotas nas importações de bens sujeitos aos regimes específicos de tributação.
+§ 1º Para fins da determinação das alíquotas estadual, distrital e municipal do IBS, o destino da operação é o local da importação, definido nos termos do art. 68 desta Lei Complementar.
+§ 2º Na impossibilidade de identificação do bem material importado, em razão de seu extravio ou consumo, e de descrição genérica nos documentos comerciais e de transporte disponíveis, serão aplicadas, para fins de determinação do IBS e da CBS incidentes na importação, as alíquotas-padrão do destino da operação.
+
+Da Base de Cálculo (IS)
+Art. 414. A base de cálculo do Imposto Seletivo é:
+I - o valor de venda na comercialização;
+II - o valor de arremate na arrematação;
+III - o valor de referência na:
+a) transação não onerosa ou no consumo do bem;
+b) extração de bem mineral; ou
+c) comercialização de produtos fumígenos;
+IV - o valor contábil de incorporação do bem produzido ao ativo imobilizado;
+V - a receita própria da entidade que promove a atividade, na hipótese de que trata o inciso VII do § 1º do art. 409 desta Lei Complementar, calculada nos termos do art. 245.
+§ 1º Nas hipóteses em que se prevê a aplicação de alíquotas específicas, nos termos desta Lei Complementar, a base de cálculo é aquela expressa em unidade de medida.
+§ 2º Ato do chefe do Poder Executivo da União definirá a metodologia para o cálculo do valor de referência mencionado no inciso III do caput deste artigo com base, entre outros, em cotações, índices ou preços vigentes na data do fato gerador, em bolsas de mercadorias e futuros, em agências de pesquisa ou em agências governamentais.
+§ 3º Na comercialização de produtos fumígenos, o valor de referência levará em consideração o preço de venda no varejo.
+Art. 415. Na comercialização de bem sujeito à alíquota ad valorem, a base de cálculo é o valor integral cobrado na operação a qualquer título, incluindo o valor correspondente a:
+I - acréscimos decorrentes de ajuste do valor da operação;
+II - juros, multas, acréscimos e encargos;
+III - descontos concedidos sob condição;
+IV - valor do transporte cobrado como parte do valor da operação, seja o transporte efetuado pelo próprio fornecedor ou por sua conta e ordem;
+V - tributos e preços públicos, inclusive tarifas, incidentes sobre a operação ou suportados pelo fornecedor, exceto aqueles previstos no § 2º do art. 12 desta Lei Complementar; e
+VI - demais importâncias cobradas ou recebidas como parte do valor da operação, inclusive seguros e taxas.
+Parágrafo único. Caso o valor da operação esteja expresso em moeda estrangeira, será feita sua conversão em moeda nacional por taxa de câmbio apurada pelo Banco Central do Brasil, nos termos do regulamento.
+Art. 416. Na comercialização entre partes relacionadas, na hipótese de incidência sujeita à alíquota ad valorem e na ausência do valor de referência de que trata o § 2º do art. 414, a base de cálculo não deverá ser inferior ao valor de mercado dos bens, entendido como o valor praticado em operações comparáveis entre partes não relacionadas.
+Parágrafo único. Para fins do disposto no caput, consideram-se partes relacionadas aquelas definidas no §§ 2º a 5º do art. 5º desta Lei Complementar.
+Art. 417. Não integram a base de cálculo do Imposto Seletivo:
+I - o montante da CBS, do IBS e do próprio Imposto Seletivo incidentes na operação; e
+II - os descontos incondicionais.
+§ 1º Para efeitos do disposto no inciso II do caput, considera-se desconto incondicional a parcela redutora do preço da operação que conste do respectivo documento fiscal e não dependa de evento posterior.
+§ 2º Não integra a base de cálculo do Imposto Seletivo a bonificação que atenda as mesmas condições especificadas no § 1º para a caracterização dos descontos incondicionais.
+§ 3º O disposto no § 2º não se aplica à tributação por meio de alíquota específica, em que a base de cálculo, expressa em unidade de medida, deve considerar os bens fornecidos em bonificação.
+§ 4º Até 31 de dezembro de 2032, não integra a base de cálculo do Imposto Seletivo o montante do:
+I - Imposto sobre operações relativas à Circulação de Mercadorias e sobre prestações de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação (ICMS), previsto no inciso II do art. 155 da Constituição Federal;
+II - Imposto sobre Serviços de Qualquer Natureza (ISS), previsto no inciso III do art. 156 da Constituição Federal.
+Art. 418. As devoluções de bens vendidos geram direito ao abatimento do valor do Imposto Seletivo cobrado na respectiva operação no período de apuração em que ocorreu a devolução ou nos subsequentes.
+
+
