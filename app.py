@@ -7,7 +7,7 @@ st.set_page_config(page_title="Entenda com quem entende!", layout="wide")
 # ==============================
 # TÍTULO E DISCLAIMER
 # ==============================
-st.title("📘 Entenda com quem entende!")
+st.title("📘 Entendendo a Reforma Tributária!")
 st.markdown("""
 **Disclaimer:** O objetivo da ferramenta é promover uma discussão sobre a reforma tributária, procurar entender os impactos nas empresas, fazer a simulação de cenários e entender como a reforma vai alterar o ambiente de negócios. Orientamos que envolva o seu departamento jurídico e fiscal/tributário nas discussões relacionadas ao tema, lembrando que trata-se de um assunto multidisciplinar, e outras áreas devem ser envolvidas como contabilidade, finanças, comercial e alta gestão.
 """)
@@ -22,8 +22,11 @@ st.markdown("A **Lei Complementar nº 214, de 16 de janeiro de 2025**, regulamen
 # BASE LEGAL (leitura do texto completo)
 # ==============================
 with st.expander("📚 Leia sobre a Base de Cálculo do IBS/CBS e do Imposto Seletivo (IS)"):
-    with open("base_calculo_completa.txt", "r", encoding="utf-8") as f:
-        st.markdown(f.read())
+    try:
+        with open("base_calculo_completa.txt", "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+    except FileNotFoundError:
+        st.warning("Arquivo 'base_calculo_completa.txt' não encontrado. Por favor, inclua-o no repositório.")
 
 # ==============================
 # UPLOAD DA PLANILHA
@@ -98,16 +101,20 @@ if st.button("Calcular Tributos"):
     st.markdown(f"**Total Tributos:** R$ {total_tributos:,.2f}")
 
     # Exportar resultado para Excel
-    resultado = pd.DataFrame({
-        "Imposto": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
-        "Valor (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, valor_is, valor_ibs, valor_cbs, valor_icms]
-    })
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        resultado.to_excel(writer, index=False, sheet_name='Tributos')
-        workbook = writer.book
-        worksheet = writer.sheets['Tributos']
-        worksheet.write('D1', f"Valor Aduaneiro: R$ {valor_aduaneiro:,.2f}")
-        worksheet.write('D2', f"Total Tributos: R$ {total_tributos:,.2f}")
-        worksheet.write('D3', f"Custo Total Importação: R$ {custo_total_importacao:,.2f}")
-    st.download_button("📥 Baixar Planilha com Resultados", data=output.getvalue(), file_name="resultado_simulacao.xlsx")
+    try:
+        import xlsxwriter
+        resultado = pd.DataFrame({
+            "Imposto": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
+            "Valor (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, valor_is, valor_ibs, valor_cbs, valor_icms]
+        })
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            resultado.to_excel(writer, index=False, sheet_name='Tributos')
+            workbook = writer.book
+            worksheet = writer.sheets['Tributos']
+            worksheet.write('D1', f"Valor Aduaneiro: R$ {valor_aduaneiro:,.2f}")
+            worksheet.write('D2', f"Total Tributos: R$ {total_tributos:,.2f}")
+            worksheet.write('D3', f"Custo Total Importação: R$ {custo_total_importacao:,.2f}")
+        st.download_button("📥 Baixar Planilha com Resultados", data=output.getvalue(), file_name="resultado_simulacao.xlsx")
+    except ModuleNotFoundError:
+        st.error("Erro: a biblioteca 'xlsxwriter' não está instalada. Verifique se 'xlsxwriter' está no seu requirements.txt.")
