@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+from fpdf import FPDF
 
 st.set_page_config(page_title="Entenda com quem entende!", layout="wide")
 
@@ -105,25 +106,23 @@ if st.button("Calcular Tributos"):
         "Valor Antes da Reforma (R$)": [valor_ii_old, valor_pis_old, valor_cofins_old, valor_ipi_old, 0.0, 0.0, 0.0, valor_icms_old]
     })
 
-    styled_df = comparativo.style.format("R$ {:,.2f}").set_table_styles([
-        {"selector": "th", "props": [("background-color", "#f0f2f6"), ("font-weight", "bold")]},
-        {"selector": "td", "props": [("text-align", "right")]},
-        {"selector": "tr:nth-child(even)", "props": [("background-color", "#fafafa")]}
-    ])
+    st.dataframe(comparativo.style.format({
+        "Valor Após Reforma (R$)": "R$ {:,.2f}",
+        "Valor Antes da Reforma (R$)": "R$ {:,.2f}"
+    }), use_container_width=True)
 
-    st.dataframe(styled_df, use_container_width=True)
+    # Exportar resultado para PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Simulação Tributária - Reforma", ln=True, align='C')
+    pdf.ln(10)
+    pdf.cell(200, 10, txt=f"Valor Aduaneiro: R$ {valor_aduaneiro:,.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"Custo Total da Importação: R$ {custo_total_importacao:,.2f}", ln=True)
+    pdf.ln(5)
+    for index, row in comparativo.iterrows():
+        pdf.cell(200, 10, txt=f"{row['Tributo']}: Pós-Reforma: R$ {row['Valor Após Reforma (R$)']:.2f} | Antes: R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
 
-    # Exportar resultado para Excel
-    try:
-        import xlsxwriter
-        resultado = comparativo.copy()
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            resultado.to_excel(writer, index=False, sheet_name='Comparativo')
-            worksheet = writer.sheets['Comparativo']
-            worksheet.write('E1', f"Valor Aduaneiro: R$ {valor_aduaneiro:,.2f}")
-            worksheet.write('E2', f"Total Tributos Pós-Reforma: R$ {total_tributos:,.2f}")
-            worksheet.write('E3', f"Custo Total Importação: R$ {custo_total_importacao:,.2f}")
-        st.download_button("📥 Baixar Comparativo em Excel", data=output.getvalue(), file_name="comparativo_tributario.xlsx")
-    except ModuleNotFoundError:
-        st.error("Erro: a biblioteca 'xlsxwriter' não está instalada. Verifique se 'xlsxwriter' está no seu requirements.txt.")
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    st.download_button("📄 Baixar Relatório em PDF", data=pdf_output.getvalue(), file_name="simulacao_tributaria.pdf")
