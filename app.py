@@ -7,7 +7,7 @@ st.set_page_config(page_title="Entenda com quem entende!", layout="wide")
 # ==============================
 # TÍTULO E DISCLAIMER
 # ==============================
-st.title("📘 Entendendo a Reforma Tributária!")
+st.title("📘 Entenda com quem entende!")
 st.markdown("""
 **Disclaimer:** O objetivo da ferramenta é promover uma discussão sobre a reforma tributária, procurar entender os impactos nas empresas, fazer a simulação de cenários e entender como a reforma vai alterar o ambiente de negócios. Orientamos que envolva o seu departamento jurídico e fiscal/tributário nas discussões relacionadas ao tema, lembrando que trata-se de um assunto multidisciplinar, e outras áreas devem ser envolvidas como contabilidade, finanças, comercial e alta gestão.
 """)
@@ -73,6 +73,7 @@ outros = st.number_input("Outros custos aduaneiros (AFRMM, Cide, etc) (em R$)", 
 if st.button("Calcular Tributos"):
     valor_aduaneiro = valor_fob + frete + seguro + outros
 
+    # Pós-reforma
     valor_ii = valor_aduaneiro * (ii / 100)
     valor_pis = valor_aduaneiro * (pis / 100)
     valor_cofins = valor_aduaneiro * (cofins / 100)
@@ -85,36 +86,44 @@ if st.button("Calcular Tributos"):
     total_tributos = valor_ii + valor_pis + valor_cofins + valor_ipi + valor_is + valor_ibs + valor_cbs + valor_icms
     custo_total_importacao = valor_aduaneiro + total_tributos
 
+    # Pré-reforma
+    valor_ii_old = valor_aduaneiro * (ii / 100)
+    valor_pis_old = valor_aduaneiro * (pis / 100)
+    valor_cofins_old = valor_aduaneiro * (cofins / 100)
+    valor_ipi_old = valor_aduaneiro * (ipi / 100)
+    valor_icms_old = valor_aduaneiro * (icms / 100)
+
     st.success("Cálculo concluído com sucesso!")
     st.markdown(f"**Valor Aduaneiro:** R$ {valor_aduaneiro:,.2f}")
     st.markdown(f"**Custo Total da Importação (com tributos):** R$ {custo_total_importacao:,.2f}")
 
-    st.markdown("### Tributos Calculados:")
-    st.markdown(f"- II: R$ {valor_ii:,.2f}")
-    st.markdown(f"- PIS: R$ {valor_pis:,.2f}")
-    st.markdown(f"- COFINS: R$ {valor_cofins:,.2f}")
-    st.markdown(f"- IPI: R$ {valor_ipi:,.2f}")
-    st.markdown(f"- IS: R$ {valor_is:,.2f}")
-    st.markdown(f"- IBS: R$ {valor_ibs:,.2f}")
-    st.markdown(f"- CBS: R$ {valor_cbs:,.2f}")
-    st.markdown(f"- ICMS: R$ {valor_icms:,.2f}")
-    st.markdown(f"**Total Tributos:** R$ {total_tributos:,.2f}")
+    st.markdown("### 📊 Tributação Reforma Tributária vs Situação Atual")
+
+    comparativo = pd.DataFrame({
+        "Tributo": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
+        "Valor Após Reforma (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, valor_is, valor_ibs, valor_cbs, valor_icms],
+        "Valor Antes da Reforma (R$)": [valor_ii_old, valor_pis_old, valor_cofins_old, valor_ipi_old, 0.0, 0.0, 0.0, valor_icms_old]
+    })
+
+    styled_df = comparativo.style.format("R$ {:,.2f}").set_table_styles([
+        {"selector": "th", "props": [("background-color", "#f0f2f6"), ("font-weight", "bold")]},
+        {"selector": "td", "props": [("text-align", "right")]},
+        {"selector": "tr:nth-child(even)", "props": [("background-color", "#fafafa")]}
+    ])
+
+    st.dataframe(styled_df, use_container_width=True)
 
     # Exportar resultado para Excel
     try:
         import xlsxwriter
-        resultado = pd.DataFrame({
-            "Imposto": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
-            "Valor (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, valor_is, valor_ibs, valor_cbs, valor_icms]
-        })
+        resultado = comparativo.copy()
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            resultado.to_excel(writer, index=False, sheet_name='Tributos')
-            workbook = writer.book
-            worksheet = writer.sheets['Tributos']
-            worksheet.write('D1', f"Valor Aduaneiro: R$ {valor_aduaneiro:,.2f}")
-            worksheet.write('D2', f"Total Tributos: R$ {total_tributos:,.2f}")
-            worksheet.write('D3', f"Custo Total Importação: R$ {custo_total_importacao:,.2f}")
-        st.download_button("📥 Baixar Planilha com Resultados", data=output.getvalue(), file_name="resultado_simulacao.xlsx")
+            resultado.to_excel(writer, index=False, sheet_name='Comparativo')
+            worksheet = writer.sheets['Comparativo']
+            worksheet.write('E1', f"Valor Aduaneiro: R$ {valor_aduaneiro:,.2f}")
+            worksheet.write('E2', f"Total Tributos Pós-Reforma: R$ {total_tributos:,.2f}")
+            worksheet.write('E3', f"Custo Total Importação: R$ {custo_total_importacao:,.2f}")
+        st.download_button("📥 Baixar Comparativo em Excel", data=output.getvalue(), file_name="comparativo_tributario.xlsx")
     except ModuleNotFoundError:
         st.error("Erro: a biblioteca 'xlsxwriter' não está instalada. Verifique se 'xlsxwriter' está no seu requirements.txt.")
