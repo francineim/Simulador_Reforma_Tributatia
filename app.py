@@ -3,15 +3,32 @@ import pandas as pd
 import io
 from fpdf import FPDF
 
-st.set_page_config(page_title="Entenda com quem entende!", layout="wide")
+st.set_page_config(page_title="Entendendo a Reforma Tributária", layout="wide")
 
-st.title("📘 Entenda com quem entende!")
+st.title("📘 Entendendo a Reforma Tributária")
 st.markdown("""
 **Disclaimer:** O objetivo da ferramenta é promover uma discussão sobre a reforma tributária, procurar entender os impactos nas empresas, fazer a simulação de cenários e entender como a reforma vai alterar o ambiente de negócios. Orientamos que envolva o seu departamento jurídico e fiscal/tributário nas discussões relacionadas ao tema, lembrando que trata-se de um assunto multidisciplinar, e outras áreas devem ser envolvidas como contabilidade, finanças, comercial e alta gestão.
 """)
 
 st.subheader("ℹ️ Informações Gerais")
-st.markdown("A **Lei Complementar nº 214, de 16 de janeiro de 2025**, regulamentou a reforma tributária.")
+st.markdown("""
+Acompanhe pelos links abaixo os principais marcos regulatórios da Reforma Tributária do Consumo.
+
+**Portaria RFB nº 549, de 13 de junho de 2025**  
+Institui o Piloto da Reforma Tributária do Consumo referente à Contribuição sobre Bens e Serviços - Piloto RTC - CBS.
+
+**Lei Complementar nº 214, de 16 de janeiro de 2025**  
+Institui o Imposto sobre Bens e Serviços (IBS), a Contribuição Social sobre Bens e Serviços (CBS) e o Imposto Seletivo (IS); cria o Comitê Gestor do IBS e altera a legislação tributária.
+
+**Portaria RFB nº 501, de 20 de dezembro de 2024**  
+Institui o Programa de Reforma Tributária do Consumo - Programa RTC para implantação da reforma tributária de que trata a Emenda Constitucional nº 132, de 20 de dezembro de 2023.
+
+**Projeto de Lei Complementar n°108, de 2024 (em tramitação)**  
+O projeto propõe criar o Comitê Gestor do Imposto sobre Bens e Serviços (CG-IBS) e estabelece normas gerenciar e administrar esse novo imposto.
+
+**Emenda Constitucional nº 132, de 20 de dezembro de 2023**  
+Altera o Sistema Tributário Nacional e ficou conhecido como Reforma Tributária do Consumo.
+""")
 
 with st.expander("📚 Leia sobre a Base de Cálculo do IBS/CBS e do Imposto Seletivo (IS)"):
     try:
@@ -20,12 +37,29 @@ with st.expander("📚 Leia sobre a Base de Cálculo do IBS/CBS e do Imposto Sel
     except FileNotFoundError:
         st.warning("Arquivo 'base_calculo_completa.txt' não encontrado. Por favor, inclua-o no repositório.")
 
-st.subheader("📂 Carregue sua Planilha de Cálculo (opcional)")
-uploaded_file = st.file_uploader("Envie um arquivo Excel com os dados da importação:", type=["xlsx"])
-if uploaded_file:
-    df_planilha = pd.read_excel(uploaded_file)
-    st.success("Planilha carregada com sucesso!")
-    st.dataframe(df_planilha)
+st.subheader("🔄 O que muda")
+
+st.markdown("""
+#### 📌 Tributos que passarão a existir:
+- **CBS**: Contribuição sobre Bens e Serviços (Federal)
+- **IBS**: Imposto sobre Bens e Serviços (Estadual e Municipal)
+- **IS**: Imposto Seletivo (Federal)
+
+#### ❌ Tributos que deixarão de existir:
+- **PIS/PASEP**: Contribuição para o Programa de Integração Social e Programa de Formação do Patrimônio do Servidor Público (Federal)
+- **Cofins**: Contribuição para Financiamento da Seguridade Social (Federal)
+- **ICMS**: Imposto sobre Circulação de Mercadorias e Serviços (Estadual)
+- **ISSQN**: Imposto sobre Serviços de Qualquer Natureza (Municipal)
+
+#### 💣 Imposto Seletivo:
+- Criado para desestimular o consumo de bens e serviços prejudiciais à saúde ou ao meio ambiente.
+- Incide sobre produção, extração, comercialização ou importação de itens definidos por lei.
+- A partir de 2027, entrará em vigor.
+
+#### 🏭 Imposto sobre Produtos Industrializados (IPI):
+- A partir de 2027, terá alíquota reduzida a zero para quase todos os produtos.
+- Será mantido apenas para preservar a competitividade da Zona Franca de Manaus.
+""")
 
 st.subheader("🧮 Simulador Reforma Tributária")
 st.markdown("### Alíquotas dos Impostos e Contribuições")
