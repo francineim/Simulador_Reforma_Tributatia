@@ -13,7 +13,7 @@ st.markdown("""
 **Disclaimer:** O objetivo da ferramenta é promover uma discussão sobre a reforma tributária, procurar entender os impactos nas empresas, fazer a simulação de cenários e entender como a reforma vai alterar o ambiente de negócios. Orientamos que envolva o seu departamento jurídico e fiscal/tributário nas discussões relacionadas ao tema, lembrando que trata-se de um assunto multidisciplinar, e outras áreas devem ser envolvidas como contabilidade, finanças, comercial e alta gestão.
 """)
 
-st.subheader(ℹ️ Informações Gerais")
+st.subheader("Informações Gerais")
 st.markdown("""
 Acompanhe pelos links abaixo os principais marcos regulatórios da Reforma Tributária do Consumo.
 
@@ -33,7 +33,7 @@ O projeto propõe criar o Comitê Gestor do Imposto sobre Bens e Serviços (CG-I
 Altera o Sistema Tributário Nacional e ficou conhecido como Reforma Tributária do Consumo.
 """)
 
-st.subheader("📤 Importar XML de NF-e")
+st.subheader("Importar XML de NF-e")
 uploaded_xmls = st.file_uploader("Envie um ou mais arquivos XML de NF-e:", type=["xml"], accept_multiple_files=True)
 
 data_xml = []
@@ -103,7 +103,7 @@ for uploaded_file in uploaded_xmls:
 if data_xml:
     df_xml = pd.DataFrame(data_xml)
 
-    st.subheader("⚙️ Definir Alíquotas para Cálculo de Tributos")
+    st.subheader("Definir Alíquotas para Cálculo de Tributos")
     col_ibscbsis1, col_ibscbsis2, col_ibscbsis3 = st.columns(3)
     with col_ibscbsis1:
         aliq_ibs = st.number_input("Alíquota IBS (%)", min_value=0.0, step=0.01)
@@ -116,7 +116,7 @@ if data_xml:
     df_xml['CBS'] = df_xml['Valor do Produto'] * (aliq_cbs / 100)
     df_xml['IS'] = df_xml['Valor do Produto'] * (aliq_is / 100)
 
-    st.subheader("📑 Informações Extraídas dos XMLs")
+    st.subheader("Informações Extraídas dos XMLs")
     st.dataframe(df_xml, use_container_width=True)
 
     output = BytesIO()
