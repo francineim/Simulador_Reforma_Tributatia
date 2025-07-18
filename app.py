@@ -19,6 +19,57 @@ Recomenda-se envolver **jurídico, fiscal, contabilidade, finanças e gestão** 
 """)
 st.divider()
 
+# ===================== Informações Gerais =====================
+st.subheader("📚 Informações Gerais")
+st.markdown("""
+A **Reforma Tributária do Consumo** está alterando profundamente a estrutura de tributos indiretos no Brasil, 
+substituindo tributos como **PIS, Cofins, ICMS e ISS** por novos tributos de caráter mais uniforme: **IBS, CBS e IS**.
+
+**Marcos regulatórios importantes:**
+- **Portaria RFB nº 549/2025** – Institui o Piloto da Reforma Tributária do Consumo referente à CBS.  
+- **Lei Complementar nº 214/2025** – Cria o Imposto sobre Bens e Serviços (IBS), CBS e Imposto Seletivo (IS).  
+- **Projeto de Lei Complementar nº 108/2024** – Normas para o Comitê Gestor do IBS.  
+- **Emenda Constitucional nº 132/2023** – Reforma Tributária do Consumo.
+
+A partir de 2027, o IPI terá **alíquota reduzida a zero**, com exceção dos produtos da Zona Franca de Manaus.
+""")
+
+with st.expander("🔎 Leia sobre a Base de Cálculo do IBS/CBS e do Imposto Seletivo (IS)"):
+    st.markdown("""
+    **Base de cálculo IBS/CBS:**  
+    Valor Aduaneiro + II + IS + Outros Custos Aduaneiros.
+
+    **Base de cálculo ICMS:**  
+    \[
+    ICMS = \frac{(VA + II + IS + IBS + CBS + Outros)}{(1 - Alíquota ICMS)}
+    \]
+
+    **Base de cálculo PIS/COFINS:**  
+    (Valor Total do Item - ICMS) x Alíquota PIS/COFINS.
+    """)
+
+st.divider()
+
+# ===================== O que muda =====================
+st.subheader("🔄 O que muda")
+st.markdown("""
+#### **Tributos que passarão a existir:**
+- **CBS**: Contribuição sobre Bens e Serviços (Federal)
+- **IBS**: Imposto sobre Bens e Serviços (Estadual e Municipal)
+- **IS**: Imposto Seletivo (Federal)
+
+#### **Tributos que deixarão de existir:**
+- **PIS/PASEP**, **Cofins**, **ICMS**, **ISSQN**
+
+#### **Imposto Seletivo (IS):**
+- Criado para desestimular consumo de bens/serviços nocivos à saúde ou ao meio ambiente.
+- Incide sobre produção, comercialização ou importação de itens definidos por lei.
+
+#### **IPI:**
+- A partir de 2027, alíquota reduzida a zero (exceto para Zona Franca de Manaus).
+""")
+st.divider()
+
 # ===================== Variáveis globais =====================
 comparativo_simulacao = None
 df_resumo_xml = None
@@ -29,8 +80,8 @@ aba_simulacao, aba_xml, aba_export = st.tabs(["🧮 Simulação Reforma Tributá
 
 # ===================== Aba 1: Simulação =====================
 with aba_simulacao:
-    st.subheader("Simulação de Importação")
-    st.markdown("### **Alíquotas dos Impostos e Contribuições**")
+    st.subheader("🧮 Simulador de Importação")
+    st.markdown("Preencha as **alíquotas de tributos** e **valores da operação** para calcular o impacto antes e depois da reforma.")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -45,7 +96,7 @@ with aba_simulacao:
         ipi = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01, key="ipi_sim")
         isel = st.number_input("Imposto Seletivo (IS) (%)", min_value=0.0, max_value=100.0, step=0.01, key="isel_sim")
 
-    st.markdown("### **Dados da Operação de Importação**")
+    st.markdown("### **Valores da Operação de Importação**")
     valor_fob = st.number_input("Valor FOB da mercadoria (R$)", min_value=0.0, step=0.01, key="fob_sim")
     frete = st.number_input("Valor do frete internacional (R$)", min_value=0.0, step=0.01, key="frete_sim")
     seguro = st.number_input("Valor do seguro internacional (R$)", min_value=0.0, step=0.01, key="seguro_sim")
@@ -56,7 +107,6 @@ with aba_simulacao:
         valor_ii = valor_aduaneiro * (ii / 100)
         valor_is = valor_aduaneiro * (isel / 100)
 
-        # NOVAS BASES
         base_ibs_cbs = valor_aduaneiro + valor_ii + valor_is + outros
         valor_ibs = base_ibs_cbs * (ibs / 100)
         valor_cbs = base_ibs_cbs * (cbs / 100)
@@ -81,6 +131,7 @@ with aba_simulacao:
 
         st.success(f"**Valor Aduaneiro:** R$ {valor_aduaneiro:,.2f}")
         st.info(f"**Custo Total da Importação (com tributos):** R$ {valor_aduaneiro + valor_ii + valor_pis + valor_cofins + valor_ipi + valor_icms:,.2f}")
+        st.markdown("### **Comparativo: Reforma vs Situação Atual**")
         st.dataframe(comparativo_simulacao.style.format("R$ {:,.2f}"), use_container_width=True)
 
         # Gráficos
@@ -88,9 +139,11 @@ with aba_simulacao:
         st.markdown("### **Gráficos de Comparativo (Antes x Depois)**")
         col_g1, col_g2 = st.columns(2)
         with col_g1:
+            st.markdown("**Distribuição em Barras**")
             bar_chart = alt.Chart(tributos_grafico).mark_bar().encode(x="Tributo:N", y="Valor:Q", color="Cenário:N")
             st.altair_chart(bar_chart, use_container_width=True)
         with col_g2:
+            st.markdown("**Distribuição em Pizza (Após Reforma)**")
             pie_chart = alt.Chart(comparativo_simulacao[comparativo_simulacao["Tributo"] != "TOTAL"]).mark_arc(innerRadius=50).encode(
                 theta="Valor Após Reforma (R$):Q",
                 color="Tributo:N"
@@ -99,9 +152,9 @@ with aba_simulacao:
 
 # ===================== Aba 2: Importação de XML =====================
 with aba_xml:
-    st.subheader("Importar XML de NF-e")
+    st.subheader("📂 Importar XML de NF-e")
+    st.markdown("Preencha as alíquotas para recalcular os tributos com base nos dados do XML.")
 
-    st.markdown("### **Alíquotas dos Tributos (para cálculo XML)**")
     colx1, colx2, colx3 = st.columns(3)
     with colx1:
         ipi_xml = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01, key="ipi_xml")
@@ -124,7 +177,6 @@ with aba_xml:
             prod = det.find('nfe:prod', ns)
             vProd = float(prod.find('nfe:vProd', ns).text)
 
-            # Após Reforma
             valor_ii_item = vProd * (ii / 100)
             valor_is_item = vProd * (isel_xml / 100)
             base_ibs_cbs_item = vProd + valor_ii_item + valor_is_item
@@ -133,12 +185,10 @@ with aba_xml:
             base_icms_item = (vProd + valor_ii_item + valor_is_item + valor_ibs_item + valor_cbs_item) / (1 - icms_xml / 100)
             valor_icms_item = base_icms_item * (icms_xml / 100)
 
-            # PIS e COFINS
             base_pis_cofins_item = (vProd + vProd * (ipi_xml / 100)) - valor_icms_item
             valor_pis_item = base_pis_cofins_item * (pis_xml / 100)
             valor_cofins_item = base_pis_cofins_item * (cofins_xml / 100)
 
-            # Antes da Reforma (sem IS, IBS, CBS)
             valor_icms_old_item = vProd * (icms_xml / 100)
             valor_pis_old_item = vProd * (pis_xml / 100)
             valor_cofins_old_item = vProd * (cofins_xml / 100)
@@ -194,15 +244,14 @@ with aba_xml:
             df_resumo_xml["Valor Antes da Reforma (R$)"].sum()
         ]
 
-        st.markdown("### **Comparativo XML: Reforma vs Antes**")
+        st.markdown("### **Comparativo XML: Reforma vs Situação Atual**")
         st.dataframe(df_resumo_xml.style.format("R$ {:,.2f}"), use_container_width=True)
 
-        # Gráficos Comparativos
         tributos_grafico_xml = df_resumo_xml[df_resumo_xml["Tributo"] != "TOTAL"].melt("Tributo", var_name="Cenário", value_name="Valor")
-
         st.markdown("### **Gráficos XML (Antes x Depois)**")
         col_x1, col_x2 = st.columns(2)
         with col_x1:
+            st.markdown("**Distribuição em Barras**")
             bar_chart_xml = alt.Chart(tributos_grafico_xml).mark_bar().encode(
                 x="Tributo:N",
                 y="Valor:Q",
@@ -211,6 +260,7 @@ with aba_xml:
             )
             st.altair_chart(bar_chart_xml, use_container_width=True)
         with col_x2:
+            st.markdown("**Distribuição em Pizza (Após Reforma)**")
             pie_chart_xml = alt.Chart(df_resumo_xml[df_resumo_xml["Tributo"] != "TOTAL"]).mark_arc(innerRadius=50).encode(
                 theta="Valor Após Reforma (R$):Q",
                 color="Tributo:N",
@@ -220,7 +270,8 @@ with aba_xml:
 
 # ===================== Aba 3: Exportações =====================
 with aba_export:
-    st.subheader("Exportações de Resultados")
+    st.subheader("📥 Exportação de Resultados")
+    st.markdown("Baixe os comparativos em **Excel** ou **PDF**.")
     if st.button("Baixar Excel Consolidado", key="btn_excel"):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
