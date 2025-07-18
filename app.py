@@ -4,6 +4,8 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from io import BytesIO
 import altair as alt
+from fpdf import FPDF
+import base64
 
 # ===================== Configuração da Página =====================
 st.set_page_config(page_title="Entendendo a Reforma Tributária", layout="wide")
@@ -17,28 +19,13 @@ Recomenda-se envolver **jurídico, fiscal, contabilidade, finanças e gestão** 
 """)
 st.divider()
 
-# ===================== Informações Gerais =====================
-with st.expander("📚 Informações Gerais"):
-    st.markdown("""
-    **Marcos regulatórios da Reforma Tributária do Consumo:**
-
-    - **Portaria RFB nº 549, de 13/06/2025** – Institui o Piloto da Reforma Tributária do Consumo referente à Contribuição sobre Bens e Serviços (CBS).  
-    - **Lei Complementar nº 214, de 16/01/2025** – Cria o Imposto sobre Bens e Serviços (IBS), CBS e Imposto Seletivo (IS).  
-    - **Portaria RFB nº 501, de 20/12/2024** – Programa de Reforma Tributária do Consumo (RTC).  
-    - **Projeto de Lei Complementar nº 108, de 2024 (em tramitação)** – Normas para o Comitê Gestor do IBS.  
-    - **Emenda Constitucional nº 132, de 20/12/2023** – Reforma Tributária do Consumo.
-    """)
-
-with st.expander("🔎 Leia sobre a Base de Cálculo do IBS/CBS e do Imposto Seletivo (IS)"):
-    try:
-        with open("base_calculo_completa.txt", "r", encoding="utf-8") as f:
-            st.markdown(f.read())
-    except FileNotFoundError:
-        st.warning("Arquivo 'base_calculo_completa.txt' não encontrado. Inclua-o no repositório.")
-st.divider()
+# ===================== Variáveis globais =====================
+comparativo_simulacao = None
+df_resumo_xml = None
+df_xml = None
 
 # ===================== Abas =====================
-aba_simulacao, aba_xml = st.tabs(["🧮 Simulação Reforma Tributária", "📂 Importar XML de NF-e"])
+aba_simulacao, aba_xml, aba_export = st.tabs(["🧮 Simulação Reforma Tributária", "📂 Importar XML de NF-e", "📥 Exportações"])
 
 # ===================== Aba 1: Simulação =====================
 with aba_simulacao:
@@ -81,93 +68,96 @@ with aba_simulacao:
         valor_pis = valor_aduaneiro * (pis / 100)
         valor_cofins = valor_aduaneiro * (cofins / 100)
 
-        total_tributos = valor_ii + valor_pis + valor_cofins + valor_ipi + valor_icms
-        custo_total_importacao = valor_aduaneiro + total_tributos
-
-        st.success(f"**Valor Aduaneiro:** R$ {valor_aduaneiro:,.2f}")
-        st.info(f"**Custo Total da Importação (com tributos):** R$ {custo_total_importacao:,.2f}")
-
-        st.markdown("### **Comparativo: Reforma Tributária vs Situação Atual**")
-        comparativo = pd.DataFrame({
+        comparativo_simulacao = pd.DataFrame({
             "Tributo": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
             "Valor Após Reforma (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, valor_is, valor_ibs, valor_cbs, valor_icms],
             "Valor Antes da Reforma (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, 0.0, 0.0, 0.0, valor_aduaneiro * (icms / 100)]
         })
-        comparativo.loc[len(comparativo)] = ["TOTAL",
-                                             comparativo["Valor Após Reforma (R$)"].sum(),
-                                             comparativo["Valor Antes da Reforma (R$)"].sum()]
+        comparativo_simulacao.loc[len(comparativo_simulacao)] = [
+            "TOTAL",
+            comparativo_simulacao["Valor Após Reforma (R$)"].sum(),
+            comparativo_simulacao["Valor Antes da Reforma (R$)"].sum()
+        ]
 
-        st.dataframe(comparativo.style.format({
-            "Valor Após Reforma (R$)": "R$ {:,.2f}",
-            "Valor Antes da Reforma (R$)": "R$ {:,.2f}"
-        }), use_container_width=True)
+        st.success(f"**Valor Aduaneiro:** R$ {valor_aduaneiro:,.2f}")
+        st.info(f"**Custo Total da Importação (com tributos):** R$ {valor_aduaneiro + valor_ii + valor_pis + valor_cofins + valor_ipi + valor_icms:,.2f}")
+        st.dataframe(comparativo_simulacao.style.format("R$ {:,.2f}"), use_container_width=True)
+
+        # Gráficos
+        tributos_grafico = comparativo_simulacao[comparativo_simulacao["Tributo"] != "TOTAL"].melt("Tributo", var_name="Cenário", value_name="Valor")
+        st.markdown("### **Gráficos de Comparativo (Antes x Depois)**")
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            bar_chart = alt.Chart(tributos_grafico).mark_bar().encode(x="Tributo:N", y="Valor:Q", color="Cenário:N")
+            st.altair_chart(bar_chart, use_container_width=True)
+        with col_g2:
+            pie_chart = alt.Chart(comparativo_simulacao[comparativo_simulacao["Tributo"] != "TOTAL"]).mark_arc(innerRadius=50).encode(
+                theta="Valor Após Reforma (R$):Q",
+                color="Tributo:N"
+            )
+            st.altair_chart(pie_chart, use_container_width=True)
 
 # ===================== Aba 2: Importação de XML =====================
 with aba_xml:
     st.subheader("Importar XML de NF-e")
-    uploaded_xmls = st.file_uploader("Envie um ou mais arquivos XML de NF-e:", type=["xml"], accept_multiple_files=True)
 
+    st.markdown("### **Alíquotas dos Tributos (para cálculo XML)**")
+    colx1, colx2, colx3 = st.columns(3)
+    with colx1:
+        ipi_xml = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01)
+        pis_xml = st.number_input("PIS (%)", min_value=0.0, max_value=100.0, step=0.01)
+    with colx2:
+        cofins_xml = st.number_input("COFINS (%)", min_value=0.0, max_value=100.0, step=0.01)
+        icms_xml = st.number_input("ICMS (%)", min_value=0.0, max_value=100.0, step=0.01)
+    with colx3:
+        isel_xml = st.number_input("IS (%)", min_value=0.0, max_value=100.0, step=0.01)
+
+    uploaded_xmls = st.file_uploader("Envie um ou mais arquivos XML de NF-e:", type=["xml"], accept_multiple_files=True)
     data_xml = []
+
     for uploaded_file in uploaded_xmls:
         tree = ET.parse(uploaded_file)
         root = tree.getroot()
         ns = {'nfe': 'http://www.portalfiscal.inf.br/nfe'}
 
         for det in root.findall('.//nfe:det', ns):
-            ide = root.find('.//nfe:ide', ns)
-            emit = root.find('.//nfe:emit', ns)
             prod = det.find('nfe:prod', ns)
-            imposto = det.find('nfe:imposto', ns)
-
-            nNF = ide.find('nfe:nNF', ns).text
-            dhEmi = ide.find('nfe:dhEmi', ns).text
-            dhEmi_formatada = datetime.strptime(dhEmi[:19], "%Y-%m-%dT%H:%M:%S").strftime("%d/%m/%Y")
-            xNome = emit.find('nfe:xNome', ns).text
-            UF = emit.find('nfe:enderEmit/nfe:UF', ns).text
-            CNPJ = emit.find('nfe:CNPJ', ns).text
-
-            cProd = prod.find('nfe:cProd', ns).text
-            xProd = prod.find('nfe:xProd', ns).text
-            NCM = prod.find('nfe:NCM', ns).text
-            CFOP = prod.find('nfe:CFOP', ns).text
-            uCom = prod.find('nfe:uCom', ns).text
-            qCom = float(prod.find('nfe:qCom', ns).text)
-            vUnCom = float(prod.find('nfe:vUnCom', ns).text)
             vProd = float(prod.find('nfe:vProd', ns).text)
 
-            # Recalcular tributos
+            # Após Reforma
             valor_ii_item = vProd * (ii / 100)
-            valor_is_item = vProd * (isel / 100)
-            base_ibs_cbs_item = vProd + valor_ii_item + valor_is_item + outros
+            valor_is_item = vProd * (isel_xml / 100)
+            base_ibs_cbs_item = vProd + valor_ii_item + valor_is_item
             valor_ibs_item = base_ibs_cbs_item * (ibs / 100)
             valor_cbs_item = base_ibs_cbs_item * (cbs / 100)
-            base_icms_item = (vProd + valor_ii_item + valor_is_item + valor_ibs_item + valor_cbs_item + outros) / (1 - icms / 100)
-            valor_icms_item = base_icms_item * (icms / 100)
+            base_icms_item = (vProd + valor_ii_item + valor_is_item + valor_ibs_item + valor_cbs_item) / (1 - icms_xml / 100)
+            valor_icms_item = base_icms_item * (icms_xml / 100)
 
-            ipi = imposto.find('nfe:IPI/nfe:IPITrib', ns)
-            vIPI = float(ipi.find('nfe:vIPI', ns).text) if ipi is not None and ipi.find('nfe:vIPI', ns) is not None else 0
-            valor_total_item = vProd + vIPI
+            # PIS e COFINS
+            base_pis_cofins_item = (vProd + vProd * (ipi_xml / 100)) - valor_icms_item
+            valor_pis_item = base_pis_cofins_item * (pis_xml / 100)
+            valor_cofins_item = base_pis_cofins_item * (cofins_xml / 100)
+
+            # Antes da Reforma (sem IS, IBS, CBS)
+            valor_icms_old_item = vProd * (icms_xml / 100)
+            valor_pis_old_item = vProd * (pis_xml / 100)
+            valor_cofins_old_item = vProd * (cofins_xml / 100)
+            valor_ipi_item = vProd * (ipi_xml / 100)
+            valor_total_item = vProd + valor_ipi_item
 
             data_xml.append({
-                'Número NF-e': nNF,
-                'Emissão': dhEmi_formatada,
-                'Fornecedor': xNome,
-                'UF': UF,
-                'Filial (CNPJ)': CNPJ,
-                'Código Produto': cProd,
-                'Descrição do Produto': xProd,
-                'NCM': NCM,
-                'CFOP': CFOP,
-                'Unidade': uCom,
-                'Quantidade': qCom,
-                'Valor Unitário': vUnCom,
                 'Valor do Produto': round(vProd, 2),
                 'Valor II': round(valor_ii_item, 2),
                 'Valor IS': round(valor_is_item, 2),
                 'Valor IBS': round(valor_ibs_item, 2),
                 'Valor CBS': round(valor_cbs_item, 2),
-                'Valor ICMS': round(valor_icms_item, 2),
-                'Valor IPI': round(vIPI, 2),
+                'Valor ICMS (Após Reforma)': round(valor_icms_item, 2),
+                'Valor ICMS (Antes Reforma)': round(valor_icms_old_item, 2),
+                'Valor PIS (Após Reforma)': round(valor_pis_item, 2),
+                'Valor PIS (Antes Reforma)': round(valor_pis_old_item, 2),
+                'Valor COFINS (Após Reforma)': round(valor_cofins_item, 2),
+                'Valor COFINS (Antes Reforma)': round(valor_cofins_old_item, 2),
+                'Valor IPI': round(valor_ipi_item, 2),
                 'Valor Total do Item': round(valor_total_item, 2)
             })
 
@@ -175,60 +165,102 @@ with aba_xml:
         df_xml = pd.DataFrame(data_xml)
         st.dataframe(df_xml, use_container_width=True)
 
-        # Resumo dos totais
-        resumo = pd.DataFrame([{
-            "Total Valor Produtos": df_xml["Valor do Produto"].sum(),
-            "Total II": df_xml["Valor II"].sum(),
-            "Total IS": df_xml["Valor IS"].sum(),
-            "Total IBS": df_xml["Valor IBS"].sum(),
-            "Total CBS": df_xml["Valor CBS"].sum(),
-            "Total ICMS": df_xml["Valor ICMS"].sum(),
-            "Total IPI": df_xml["Valor IPI"].sum(),
-            "Total Geral Itens": df_xml["Valor Total do Item"].sum()
-        }])
-
-        st.markdown("### **Resumo Consolidado dos Tributos (XML)**")
-        st.dataframe(resumo.style.format("R$ {:,.2f}"), use_container_width=True)
-
-        # ===================== GRÁFICOS =====================
-        st.markdown("### **Gráficos de Distribuição de Tributos**")
-
-        tributos_grafico = pd.DataFrame({
-            "Tributo": ["II", "IS", "IBS", "CBS", "ICMS", "IPI"],
-            "Valor": [
-                resumo["Total II"].iloc[0],
-                resumo["Total IS"].iloc[0],
-                resumo["Total IBS"].iloc[0],
-                resumo["Total CBS"].iloc[0],
-                resumo["Total ICMS"].iloc[0],
-                resumo["Total IPI"].iloc[0]
+        df_resumo_xml = pd.DataFrame({
+            "Tributo": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
+            "Valor Após Reforma (R$)": [
+                df_xml["Valor II"].sum(),
+                df_xml["Valor PIS (Após Reforma)"].sum(),
+                df_xml["Valor COFINS (Após Reforma)"].sum(),
+                df_xml["Valor IPI"].sum(),
+                df_xml["Valor IS"].sum(),
+                df_xml["Valor IBS"].sum(),
+                df_xml["Valor CBS"].sum(),
+                df_xml["Valor ICMS (Após Reforma)"].sum()
+            ],
+            "Valor Antes da Reforma (R$)": [
+                df_xml["Valor II"].sum(),
+                df_xml["Valor PIS (Antes Reforma)"].sum(),
+                df_xml["Valor COFINS (Antes Reforma)"].sum(),
+                df_xml["Valor IPI"].sum(),
+                0.0,
+                0.0,
+                0.0,
+                df_xml["Valor ICMS (Antes Reforma)"].sum()
             ]
         })
+        df_resumo_xml.loc[len(df_resumo_xml)] = [
+            "TOTAL",
+            df_resumo_xml["Valor Após Reforma (R$)"].sum(),
+            df_resumo_xml["Valor Antes da Reforma (R$)"].sum()
+        ]
 
-        col_g1, col_g2 = st.columns(2)
-        with col_g1:
-            st.markdown("**Distribuição em Barras**")
-            bar_chart = alt.Chart(tributos_grafico).mark_bar().encode(
-                x=alt.X("Tributo", sort=None),
-                y=alt.Y("Valor"),
-                color="Tributo"
+        st.markdown("### **Comparativo XML: Reforma vs Antes**")
+        st.dataframe(df_resumo_xml.style.format("R$ {:,.2f}"), use_container_width=True)
+
+        # Gráficos Comparativos
+        tributos_grafico_xml = df_resumo_xml[df_resumo_xml["Tributo"] != "TOTAL"].melt("Tributo", var_name="Cenário", value_name="Valor")
+
+        st.markdown("### **Gráficos XML (Antes x Depois)**")
+        col_x1, col_x2 = st.columns(2)
+        with col_x1:
+            bar_chart_xml = alt.Chart(tributos_grafico_xml).mark_bar().encode(
+                x="Tributo:N",
+                y="Valor:Q",
+                color="Cenário:N",
+                tooltip=["Tributo", "Cenário", "Valor"]
             )
-            st.altair_chart(bar_chart, use_container_width=True)
-
-        with col_g2:
-            st.markdown("**Distribuição em Pizza**")
-            pie_chart = alt.Chart(tributos_grafico).mark_arc(innerRadius=50).encode(
-                theta="Valor",
-                color="Tributo",
-                tooltip=["Tributo", "Valor"]
+            st.altair_chart(bar_chart_xml, use_container_width=True)
+        with col_x2:
+            pie_chart_xml = alt.Chart(df_resumo_xml[df_resumo_xml["Tributo"] != "TOTAL"]).mark_arc(innerRadius=50).encode(
+                theta="Valor Após Reforma (R$):Q",
+                color="Tributo:N",
+                tooltip=["Tributo", "Valor Após Reforma (R$)"]
             )
-            st.altair_chart(pie_chart, use_container_width=True)
+            st.altair_chart(pie_chart_xml, use_container_width=True)
 
-        # Download Excel
+# ===================== Aba 3: Exportações =====================
+with aba_export:
+    st.subheader("Exportações de Resultados")
+    if st.button("Baixar Excel Consolidado"):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_xml.to_excel(writer, sheet_name='NF-e XML', index=False)
-            resumo.to_excel(writer, sheet_name='Resumo Tributos', index=False)
-        st.download_button("Baixar XML em Excel", data=output.getvalue(),
-                           file_name="nfe_xml_extraido.xlsx",
-                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            if comparativo_simulacao is not None:
+                comparativo_simulacao.to_excel(writer, sheet_name="Simulação", index=False)
+            if df_xml is not None:
+                df_xml.to_excel(writer, sheet_name="XML Detalhes", index=False)
+            if df_resumo_xml is not None:
+                df_resumo_xml.to_excel(writer, sheet_name="Resumo XML", index=False)
+        st.download_button(
+            label="Clique para baixar Excel",
+            data=output.getvalue(),
+            file_name="relatorio_tributos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    if st.button("Baixar PDF Consolidado"):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(200, 10, txt="Relatório Comparativo de Tributos", ln=True, align="C")
+
+        if comparativo_simulacao is not None:
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(200, 10, txt="Simulação Manual", ln=True)
+            pdf.set_font("Arial", "", 10)
+            for i, row in comparativo_simulacao.iterrows():
+                pdf.cell(0, 10, txt=f"{row['Tributo']}: Após Reforma R$ {row['Valor Após Reforma (R$)']:.2f} | Antes R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
+
+        if df_resumo_xml is not None:
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(200, 10, txt="Resumo XML", ln=True)
+            pdf.set_font("Arial", "", 10)
+            for i, row in df_resumo_xml.iterrows():
+                pdf.cell(0, 10, txt=f"{row['Tributo']}: Após Reforma R$ {row['Valor Após Reforma (R$)']:.2f} | Antes R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
+
+        pdf_output = BytesIO()
+        pdf.output(pdf_output)
+        pdf_output.seek(0)
+
+        b64_pdf = base64.b64encode(pdf_output.read()).decode('utf-8')
+        href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="relatorio_tributos.pdf">Clique aqui para baixar PDF</a>'
+        st.markdown(href, unsafe_allow_html=True)
