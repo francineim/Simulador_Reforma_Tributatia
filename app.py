@@ -34,22 +34,22 @@ with aba_simulacao:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        ii = st.number_input("Imposto de Importação (%)", min_value=0.0, max_value=100.0, step=0.01)
-        pis = st.number_input("PIS Nacionalização (%)", min_value=0.0, max_value=100.0, step=0.01)
-        cofins = st.number_input("COFINS Nacionalização (%)", min_value=0.0, max_value=100.0, step=0.01)
+        ii = st.number_input("Imposto de Importação (%)", min_value=0.0, max_value=100.0, step=0.01, key="ii_sim")
+        pis = st.number_input("PIS Nacionalização (%)", min_value=0.0, max_value=100.0, step=0.01, key="pis_sim")
+        cofins = st.number_input("COFINS Nacionalização (%)", min_value=0.0, max_value=100.0, step=0.01, key="cofins_sim")
     with col2:
-        ibs = st.number_input("IBS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        cbs = st.number_input("CBS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        icms = st.number_input("ICMS (%)", min_value=0.0, max_value=100.0, step=0.01)
+        ibs = st.number_input("IBS (%)", min_value=0.0, max_value=100.0, step=0.01, key="ibs_sim")
+        cbs = st.number_input("CBS (%)", min_value=0.0, max_value=100.0, step=0.01, key="cbs_sim")
+        icms = st.number_input("ICMS (%)", min_value=0.0, max_value=100.0, step=0.01, key="icms_sim")
     with col3:
-        ipi = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01)
-        isel = st.number_input("Imposto Seletivo (IS) (%)", min_value=0.0, max_value=100.0, step=0.01)
+        ipi = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01, key="ipi_sim")
+        isel = st.number_input("Imposto Seletivo (IS) (%)", min_value=0.0, max_value=100.0, step=0.01, key="isel_sim")
 
     st.markdown("### **Dados da Operação de Importação**")
-    valor_fob = st.number_input("Valor FOB da mercadoria (R$)", min_value=0.0, step=0.01)
-    frete = st.number_input("Valor do frete internacional (R$)", min_value=0.0, step=0.01)
-    seguro = st.number_input("Valor do seguro internacional (R$)", min_value=0.0, step=0.01)
-    outros = st.number_input("Outros custos aduaneiros (AFRMM, Cide, etc) (R$)", min_value=0.0, step=0.01)
+    valor_fob = st.number_input("Valor FOB da mercadoria (R$)", min_value=0.0, step=0.01, key="fob_sim")
+    frete = st.number_input("Valor do frete internacional (R$)", min_value=0.0, step=0.01, key="frete_sim")
+    seguro = st.number_input("Valor do seguro internacional (R$)", min_value=0.0, step=0.01, key="seguro_sim")
+    outros = st.number_input("Outros custos aduaneiros (AFRMM, Cide, etc) (R$)", min_value=0.0, step=0.01, key="outros_sim")
 
     if st.button("Calcular Tributos", key="btn_simulacao"):
         valor_aduaneiro = valor_fob + frete + seguro + outros
@@ -104,15 +104,15 @@ with aba_xml:
     st.markdown("### **Alíquotas dos Tributos (para cálculo XML)**")
     colx1, colx2, colx3 = st.columns(3)
     with colx1:
-        ipi_xml = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01)
-        pis_xml = st.number_input("PIS (%)", min_value=0.0, max_value=100.0, step=0.01)
+        ipi_xml = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01, key="ipi_xml")
+        pis_xml = st.number_input("PIS (%)", min_value=0.0, max_value=100.0, step=0.01, key="pis_xml")
     with colx2:
-        cofins_xml = st.number_input("COFINS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        icms_xml = st.number_input("ICMS (%)", min_value=0.0, max_value=100.0, step=0.01)
+        cofins_xml = st.number_input("COFINS (%)", min_value=0.0, max_value=100.0, step=0.01, key="cofins_xml")
+        icms_xml = st.number_input("ICMS (%)", min_value=0.0, max_value=100.0, step=0.01, key="icms_xml")
     with colx3:
-        isel_xml = st.number_input("IS (%)", min_value=0.0, max_value=100.0, step=0.01)
+        isel_xml = st.number_input("IS (%)", min_value=0.0, max_value=100.0, step=0.01, key="isel_xml")
 
-    uploaded_xmls = st.file_uploader("Envie um ou mais arquivos XML de NF-e:", type=["xml"], accept_multiple_files=True)
+    uploaded_xmls = st.file_uploader("Envie um ou mais arquivos XML de NF-e:", type=["xml"], accept_multiple_files=True, key="xml_uploader")
     data_xml = []
 
     for uploaded_file in uploaded_xmls:
@@ -221,7 +221,7 @@ with aba_xml:
 # ===================== Aba 3: Exportações =====================
 with aba_export:
     st.subheader("Exportações de Resultados")
-    if st.button("Baixar Excel Consolidado"):
+    if st.button("Baixar Excel Consolidado", key="btn_excel"):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             if comparativo_simulacao is not None:
@@ -237,7 +237,7 @@ with aba_export:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    if st.button("Baixar PDF Consolidado"):
+    if st.button("Baixar PDF Consolidado", key="btn_pdf"):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 14)
@@ -247,15 +247,15 @@ with aba_export:
             pdf.set_font("Arial", "B", 12)
             pdf.cell(200, 10, txt="Simulação Manual", ln=True)
             pdf.set_font("Arial", "", 10)
-            for i, row in comparativo_simulacao.iterrows():
-                pdf.cell(0, 10, txt=f"{row['Tributo']}: Após Reforma R$ {row['Valor Após Reforma (R$)']:.2f} | Antes R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
+            for _, row in comparativo_simulacao.iterrows():
+                pdf.cell(0, 10, txt=f"{row['Tributo']}: Após R$ {row['Valor Após Reforma (R$)']:.2f} | Antes R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
 
         if df_resumo_xml is not None:
             pdf.set_font("Arial", "B", 12)
             pdf.cell(200, 10, txt="Resumo XML", ln=True)
             pdf.set_font("Arial", "", 10)
-            for i, row in df_resumo_xml.iterrows():
-                pdf.cell(0, 10, txt=f"{row['Tributo']}: Após Reforma R$ {row['Valor Após Reforma (R$)']:.2f} | Antes R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
+            for _, row in df_resumo_xml.iterrows():
+                pdf.cell(0, 10, txt=f"{row['Tributo']}: Após R$ {row['Valor Após Reforma (R$)']:.2f} | Antes R$ {row['Valor Antes da Reforma (R$)']:.2f}", ln=True)
 
         pdf_output = BytesIO()
         pdf.output(pdf_output)
