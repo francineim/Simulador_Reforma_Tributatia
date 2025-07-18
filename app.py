@@ -15,7 +15,7 @@ st.markdown("""
 
 st.subheader("Informações Gerais")
 st.markdown("""
-Acompanhe pelos links abaixo os principais marcos regulatórios da Reforma Tributária do Consumo.
+Marcos regulatórios da Reforma Tributária do Consumo.
 
 **Portaria RFB nº 549, de 13 de junho de 2025**  
 Institui o Piloto da Reforma Tributária do Consumo referente à Contribuição sobre Bens e Serviços - Piloto RTC - CBS.
@@ -64,52 +64,28 @@ st.markdown("""
 """)
 
 st.subheader("Simulador Reforma Tributária")
+st.markdown("### Alíquotas dos Impostos e Contribuições")
 
-opcao_simulacao = st.radio("Escolha o tipo de simulação:", ["Simular manualmente os tributos (planilha)", "Importar XML de NF-e para simulação"])
+col1, col2, col3 = st.columns(3)
+with col1:
+    ii = st.number_input("Imposto de Importação (%)", min_value=0.0, max_value=100.0, step=0.01)
+    pis = st.number_input("PIS Nacionalização (%)", min_value=0.0, max_value=100.0, step=0.01)
+    cofins = st.number_input("COFINS Nacionalização (%)", min_value=0.0, max_value=100.0, step=0.01)
+with col2:
+    ibs = st.number_input("IBS (%)", min_value=0.0, max_value=100.0, step=0.01)
+    cbs = st.number_input("CBS (%)", min_value=0.0, max_value=100.0, step=0.01)
+    icms = st.number_input("ICMS (%)", min_value=0.0, max_value=100.0, step=0.01)
+with col3:
+    ipi = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01)
+    isel = st.number_input("Imposto Seletivo (IS) (%)", min_value=0.0, max_value=100.0, step=0.01)
 
-if opcao_simulacao == "Simular manualmente os tributos (planilha)":
-    st.markdown("### Preenchimento Manual")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        pis = st.number_input("Alíquota PIS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        icms = st.number_input("Alíquota ICMS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        ibs = st.number_input("Alíquota IBS (%)", min_value=0.0, max_value=100.0, step=0.01)
-    with col2:
-        cofins = st.number_input("Alíquota COFINS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        ipi = st.number_input("Alíquota IPI/IS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        cbs = st.number_input("Alíquota CBS (%)", min_value=0.0, max_value=100.0, step=0.01)
-    with col3:
-        isel = st.number_input("Alíquota IS (%)", min_value=0.0, max_value=100.0, step=0.01)
-        valor_liquido = st.number_input("Valor Líquido do Produto (R$)", min_value=0.0, step=0.01)
+st.markdown("### Dados da Operação de Importação")
+valor_fob = st.number_input("Valor FOB da mercadoria (em R$)", min_value=0.0, step=0.01)
+frete = st.number_input("Valor do frete internacional (em R$)", min_value=0.0, step=0.01)
+seguro = st.number_input("Valor do seguro internacional (em R$)", min_value=0.0, step=0.01)
+outros = st.number_input("Outros custos aduaneiros (AFRMM, Cide, etc) (em R$)", min_value=0.0, step=0.01)
 
-    if st.button("Calcular Tributos (Manual)"):
-        valor_pis = valor_liquido * (pis / 100)
-        valor_cofins = valor_liquido * (cofins / 100)
-        valor_icms = valor_liquido * (icms / 100)
-        valor_ipi = valor_liquido * (ipi / 100)
-        valor_ibs = valor_liquido * (ibs / 100)
-        valor_cbs = valor_liquido * (cbs / 100)
-        valor_is = valor_liquido * (isel / 100)
-
-        valor_total_com_tributos = valor_liquido + valor_pis + valor_cofins + valor_icms + valor_ipi + valor_ibs + valor_cbs + valor_is
-
-        resultado_df = pd.DataFrame({
-            'Tributo': ['PIS', 'COFINS', 'ICMS', 'IPI/IS', 'IBS', 'CBS', 'IS'],
-            'Alíquota (%)': [pis, cofins, icms, ipi, ibs, cbs, isel],
-            'Valor (R$)': [valor_pis, valor_cofins, valor_icms, valor_ipi, valor_ibs, valor_cbs, valor_is]
-        })
-
-        st.markdown("### Resultado da Simulação Manual")
-        st.dataframe(resultado_df.style.format({
-            'Alíquota (%)': "{:.2f}",
-            'Valor (R$)': "R$ {:,.2f}"
-        }), use_container_width=True)
-
-        st.markdown(f"**Valor Líquido:** R$ {valor_liquido:,.2f}")
-        st.markdown(f"**Valor Total com Tributos:** R$ {valor_total_com_tributos:,.2f}")
-
-else:
-    st.markdown("### Importar XML de NF-e para simulação")
+if st.button("Calcular Tributos"):
     valor_aduaneiro = valor_fob + frete + seguro + outros
 
     valor_ii = valor_aduaneiro * (ii / 100)
@@ -233,7 +209,7 @@ for uploaded_file in uploaded_xmls:
 if data_xml:
     df_xml = pd.DataFrame(data_xml)
 
-    st.subheader("Definir Alíquotas para Cálculo de Tributos por Produto")
+    st.subheader("Definir Alíquotas para Cálculo de Tributos")
     col1, col2, col3 = st.columns(3)
     with col1:
         aliq_ibs = st.number_input("Alíquota IBS para XML (%)", min_value=0.0, step=0.01)
@@ -242,11 +218,8 @@ if data_xml:
     with col3:
         aliq_is = st.number_input("Alíquota IS para XML (%)", min_value=0.0, step=0.01)
 
-    df_xml['Alíquota IBS (%)'] = aliq_ibs
     df_xml['IBS'] = df_xml['Valor do Produto'] * (aliq_ibs / 100)
-    df_xml['Alíquota CBS (%)'] = aliq_cbs
     df_xml['CBS'] = df_xml['Valor do Produto'] * (aliq_cbs / 100)
-    df_xml['Alíquota IS (%)'] = aliq_is
     df_xml['IS'] = df_xml['Valor do Produto'] * (aliq_is / 100)
 
     st.subheader("Informações Extraídas dos XMLs")
