@@ -1,84 +1,49 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 import xml.etree.ElementTree as ET
-from fpdf import FPDF
 from datetime import datetime
 from io import BytesIO
+import altair as alt
 
-# ==========================================
-# Funções Auxiliares
-# ==========================================
-def calcular_tributos(valor_aduaneiro, ii, pis, cofins, ipi, isel, ibs, cbs, icms):
-    """
-    Calcula os tributos da operação e o custo total da importação,
-    excluindo IS, IBS e CBS do custo_total_importacao.
-    """
-    valores = {
-        "II": valor_aduaneiro * (ii / 100),
-        "PIS": valor_aduaneiro * (pis / 100),
-        "COFINS": valor_aduaneiro * (cofins / 100),
-        "IPI": valor_aduaneiro * (ipi / 100),
-        "IS": valor_aduaneiro * (isel / 100),
-        "IBS": valor_aduaneiro * (ibs / 100),
-        "CBS": valor_aduaneiro * (cbs / 100),
-        "ICMS": valor_aduaneiro * (icms / 100),
-    }
-    total_tributos = valores["II"] + valores["PIS"] + valores["COFINS"] + valores["IPI"] + valores["ICMS"]
-    custo_total_importacao = valor_aduaneiro + total_tributos
-    return valores, custo_total_importacao
+# ===================== Configuração da Página =====================
+st.set_page_config(page_title="Entendendo a Reforma Tributária", layout="wide")
 
-def criar_comparativo(valores, valores_old):
-    """
-    Cria dataframe comparativo entre situação atual e pós-reforma, com totalizador.
-    """
-    df = pd.DataFrame({
-        "Tributo": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
-        "Valor Após Reforma (R$)": [
-            valores["II"], valores["PIS"], valores["COFINS"], valores["IPI"],
-            valores["IS"], valores["IBS"], valores["CBS"], valores["ICMS"]
-        ],
-        "Valor Antes da Reforma (R$)": [
-            valores_old["II"], valores_old["PIS"], valores_old["COFINS"], valores_old["IPI"],
-            0.0, 0.0, 0.0, valores_old["ICMS"]
-        ]
-    })
-    # Adiciona totalizador
-    df.loc[len(df)] = [
-        "TOTAL",
-        df["Valor Após Reforma (R$)"].sum(),
-        df["Valor Antes da Reforma (R$)"].sum()
-    ]
-    return df
+# ===================== Cabeçalho =====================
+st.title("📊 Entendendo a Reforma Tributária")
+st.markdown("""
+**Disclaimer:**  
+O objetivo da ferramenta é promover uma discussão sobre a reforma tributária, entender os impactos nas empresas e simular cenários.  
+Recomenda-se envolver **jurídico, fiscal, contabilidade, finanças e gestão** nas análises.
+""")
+st.divider()
 
-def gerar_grafico_comparativo(df):
-    """
-    Gera gráfico de barras comparando os tributos antes e depois da reforma.
-    """
-    chart_data = df[df["Tributo"] != "TOTAL"]
-    chart = alt.Chart(chart_data).transform_fold(
-        ["Valor Antes da Reforma (R$)", "Valor Após Reforma (R$)"],
-        as_=["Cenário", "Valor"]
-    ).mark_bar().encode(
-        x=alt.X("Tributo:N", title="Tributo"),
-        y=alt.Y("Valor:Q", title="Valor (R$)"),
-        color="Cenário:N"
-    )
-    return chart
+# ===================== Informações Gerais =====================
+with st.expander("📚 Informações Gerais"):
+    st.markdown("""
+    **Marcos regulatórios da Reforma Tributária do Consumo:**
 
-# ==========================================
-# Layout da Página
-# ==========================================
-st.set_page_config(page_title="Simulador Reforma Tributária", layout="wide")
-st.title("💼 Simulador de Importação – Reforma Tributária")
+    - **Portaria RFB nº 549, de 13/06/2025** – Institui o Piloto da Reforma Tributária do Consumo referente à Contribuição sobre Bens e Serviços (CBS).  
+    - **Lei Complementar nº 214, de 16/01/2025** – Cria o Imposto sobre Bens e Serviços (IBS), CBS e Imposto Seletivo (IS).  
+    - **Portaria RFB nº 501, de 20/12/2024** – Programa de Reforma Tributária do Consumo (RTC).  
+    - **Projeto de Lei Complementar nº 108, de 2024 (em tramitação)** – Normas para o Comitê Gestor do IBS.  
+    - **Emenda Constitucional nº 132, de 20/12/2023** – Reforma Tributária do Consumo.
+    """)
 
-tabs = st.tabs(["Simulação", "Importar XML de NF-e"])
+with st.expander("🔎 Leia sobre a Base de Cálculo do IBS/CBS e do Imposto Seletivo (IS)"):
+    try:
+        with open("base_calculo_completa.txt", "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+    except FileNotFoundError:
+        st.warning("Arquivo 'base_calculo_completa.txt' não encontrado. Inclua-o no repositório.")
+st.divider()
 
-# ==========================================
-# Aba de Simulação
-# ==========================================
-with tabs[0]:
-    st.subheader("Informe os Dados da Operação de Importação")
+# ===================== Abas =====================
+aba_simulacao, aba_xml = st.tabs(["🧮 Simulação Reforma Tributária", "📂 Importar XML de NF-e"])
+
+# ===================== Aba 1: Simulação =====================
+with aba_simulacao:
+    st.subheader("Simulação de Importação")
+    st.markdown("### **Alíquotas dos Impostos e Contribuições**")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -93,43 +58,52 @@ with tabs[0]:
         ipi = st.number_input("IPI (%)", min_value=0.0, max_value=100.0, step=0.01)
         isel = st.number_input("Imposto Seletivo (IS) (%)", min_value=0.0, max_value=100.0, step=0.01)
 
-    st.markdown("### Dados da Operação de Importação")
-    valor_fob = st.number_input("Valor FOB da mercadoria (em R$)", min_value=0.0, step=0.01)
-    frete = st.number_input("Valor do frete internacional (em R$)", min_value=0.0, step=0.01)
-    seguro = st.number_input("Valor do seguro internacional (em R$)", min_value=0.0, step=0.01)
-    outros = st.number_input("Outros custos aduaneiros (AFRMM, Cide, etc) (em R$)", min_value=0.0, step=0.01)
+    st.markdown("### **Dados da Operação de Importação**")
+    valor_fob = st.number_input("Valor FOB da mercadoria (R$)", min_value=0.0, step=0.01)
+    frete = st.number_input("Valor do frete internacional (R$)", min_value=0.0, step=0.01)
+    seguro = st.number_input("Valor do seguro internacional (R$)", min_value=0.0, step=0.01)
+    outros = st.number_input("Outros custos aduaneiros (AFRMM, Cide, etc) (R$)", min_value=0.0, step=0.01)
 
-    if st.button("Calcular Tributos"):
+    if st.button("Calcular Tributos", key="btn_simulacao"):
         valor_aduaneiro = valor_fob + frete + seguro + outros
-        valores, custo_total_importacao = calcular_tributos(valor_aduaneiro, ii, pis, cofins, ipi, isel, ibs, cbs, icms)
+        valor_ii = valor_aduaneiro * (ii / 100)
+        valor_is = valor_aduaneiro * (isel / 100)
 
-        # Antes da reforma (sem IS, IBS, CBS)
-        valores_old = {
-            "II": valores["II"],
-            "PIS": valores["PIS"],
-            "COFINS": valores["COFINS"],
-            "IPI": valores["IPI"],
-            "ICMS": valores["ICMS"]
-        }
+        # NOVAS BASES
+        base_ibs_cbs = valor_aduaneiro + valor_ii + valor_is + outros
+        valor_ibs = base_ibs_cbs * (ibs / 100)
+        valor_cbs = base_ibs_cbs * (cbs / 100)
+        valor_ipi = valor_aduaneiro * (ipi / 100)
 
-        df_comparativo = criar_comparativo(valores, valores_old)
+        base_icms = (valor_aduaneiro + valor_ii + valor_is + valor_ibs + valor_cbs + outros) / (1 - icms / 100)
+        valor_icms = base_icms * (icms / 100)
+
+        valor_pis = valor_aduaneiro * (pis / 100)
+        valor_cofins = valor_aduaneiro * (cofins / 100)
+
+        total_tributos = valor_ii + valor_pis + valor_cofins + valor_ipi + valor_icms
+        custo_total_importacao = valor_aduaneiro + total_tributos
 
         st.success(f"**Valor Aduaneiro:** R$ {valor_aduaneiro:,.2f}")
         st.info(f"**Custo Total da Importação (com tributos):** R$ {custo_total_importacao:,.2f}")
 
-        st.markdown("### Comparativo: Reforma Tributária vs Situação Atual")
-        st.dataframe(df_comparativo.style.format({
+        st.markdown("### **Comparativo: Reforma Tributária vs Situação Atual**")
+        comparativo = pd.DataFrame({
+            "Tributo": ["II", "PIS", "COFINS", "IPI", "IS", "IBS", "CBS", "ICMS"],
+            "Valor Após Reforma (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, valor_is, valor_ibs, valor_cbs, valor_icms],
+            "Valor Antes da Reforma (R$)": [valor_ii, valor_pis, valor_cofins, valor_ipi, 0.0, 0.0, 0.0, valor_aduaneiro * (icms / 100)]
+        })
+        comparativo.loc[len(comparativo)] = ["TOTAL",
+                                             comparativo["Valor Após Reforma (R$)"].sum(),
+                                             comparativo["Valor Antes da Reforma (R$)"].sum()]
+
+        st.dataframe(comparativo.style.format({
             "Valor Após Reforma (R$)": "R$ {:,.2f}",
             "Valor Antes da Reforma (R$)": "R$ {:,.2f}"
         }), use_container_width=True)
 
-        st.markdown("### Gráfico Comparativo")
-        st.altair_chart(gerar_grafico_comparativo(df_comparativo), use_container_width=True)
-
-# ==========================================
-# Aba de XML de NF-e
-# ==========================================
-with tabs[1]:
+# ===================== Aba 2: Importação de XML =====================
+with aba_xml:
     st.subheader("Importar XML de NF-e")
     uploaded_xmls = st.file_uploader("Envie um ou mais arquivos XML de NF-e:", type=["xml"], accept_multiple_files=True)
 
@@ -138,6 +112,7 @@ with tabs[1]:
         tree = ET.parse(uploaded_file)
         root = tree.getroot()
         ns = {'nfe': 'http://www.portalfiscal.inf.br/nfe'}
+
         for det in root.findall('.//nfe:det', ns):
             ide = root.find('.//nfe:ide', ns)
             emit = root.find('.//nfe:emit', ns)
@@ -160,16 +135,17 @@ with tabs[1]:
             vUnCom = float(prod.find('nfe:vUnCom', ns).text)
             vProd = float(prod.find('nfe:vProd', ns).text)
 
-            icms = imposto.find('nfe:ICMS/*', ns)
-            CST_ICMS = icms.find('nfe:CST', ns).text if icms.find('nfe:CST', ns) is not None else ''
-            vBC_ICMS = float(icms.find('nfe:vBC', ns).text) if icms.find('nfe:vBC', ns) is not None else 0
-            pICMS = float(icms.find('nfe:pICMS', ns).text) if icms.find('nfe:pICMS', ns) is not None else 0
-            vICMS = float(icms.find('nfe:vICMS', ns).text) if icms.find('nfe:vICMS', ns) is not None else 0
+            # Recalcular tributos
+            valor_ii_item = vProd * (ii / 100)
+            valor_is_item = vProd * (isel / 100)
+            base_ibs_cbs_item = vProd + valor_ii_item + valor_is_item + outros
+            valor_ibs_item = base_ibs_cbs_item * (ibs / 100)
+            valor_cbs_item = base_ibs_cbs_item * (cbs / 100)
+            base_icms_item = (vProd + valor_ii_item + valor_is_item + valor_ibs_item + valor_cbs_item + outros) / (1 - icms / 100)
+            valor_icms_item = base_icms_item * (icms / 100)
 
             ipi = imposto.find('nfe:IPI/nfe:IPITrib', ns)
-            CST_IPI = ipi.find('nfe:CST', ns).text if ipi is not None and ipi.find('nfe:CST', ns) is not None else ''
             vIPI = float(ipi.find('nfe:vIPI', ns).text) if ipi is not None and ipi.find('nfe:vIPI', ns) is not None else 0
-
             valor_total_item = vProd + vIPI
 
             data_xml.append({
@@ -186,22 +162,73 @@ with tabs[1]:
                 'Quantidade': qCom,
                 'Valor Unitário': vUnCom,
                 'Valor do Produto': round(vProd, 2),
-                'CST ICMS': CST_ICMS,
-                'Base ICMS': round(vBC_ICMS, 2),
-                'Alíquota ICMS': round(pICMS, 2),
-                'Valor ICMS': round(vICMS, 2),
-                'CST IPI': CST_IPI,
+                'Valor II': round(valor_ii_item, 2),
+                'Valor IS': round(valor_is_item, 2),
+                'Valor IBS': round(valor_ibs_item, 2),
+                'Valor CBS': round(valor_cbs_item, 2),
+                'Valor ICMS': round(valor_icms_item, 2),
                 'Valor IPI': round(vIPI, 2),
-                'Valor Total do Item': valor_total_item
+                'Valor Total do Item': round(valor_total_item, 2)
             })
 
     if data_xml:
         df_xml = pd.DataFrame(data_xml)
         st.dataframe(df_xml, use_container_width=True)
 
+        # Resumo dos totais
+        resumo = pd.DataFrame([{
+            "Total Valor Produtos": df_xml["Valor do Produto"].sum(),
+            "Total II": df_xml["Valor II"].sum(),
+            "Total IS": df_xml["Valor IS"].sum(),
+            "Total IBS": df_xml["Valor IBS"].sum(),
+            "Total CBS": df_xml["Valor CBS"].sum(),
+            "Total ICMS": df_xml["Valor ICMS"].sum(),
+            "Total IPI": df_xml["Valor IPI"].sum(),
+            "Total Geral Itens": df_xml["Valor Total do Item"].sum()
+        }])
+
+        st.markdown("### **Resumo Consolidado dos Tributos (XML)**")
+        st.dataframe(resumo.style.format("R$ {:,.2f}"), use_container_width=True)
+
+        # ===================== GRÁFICOS =====================
+        st.markdown("### **Gráficos de Distribuição de Tributos**")
+
+        tributos_grafico = pd.DataFrame({
+            "Tributo": ["II", "IS", "IBS", "CBS", "ICMS", "IPI"],
+            "Valor": [
+                resumo["Total II"].iloc[0],
+                resumo["Total IS"].iloc[0],
+                resumo["Total IBS"].iloc[0],
+                resumo["Total CBS"].iloc[0],
+                resumo["Total ICMS"].iloc[0],
+                resumo["Total IPI"].iloc[0]
+            ]
+        })
+
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.markdown("**Distribuição em Barras**")
+            bar_chart = alt.Chart(tributos_grafico).mark_bar().encode(
+                x=alt.X("Tributo", sort=None),
+                y=alt.Y("Valor"),
+                color="Tributo"
+            )
+            st.altair_chart(bar_chart, use_container_width=True)
+
+        with col_g2:
+            st.markdown("**Distribuição em Pizza**")
+            pie_chart = alt.Chart(tributos_grafico).mark_arc(innerRadius=50).encode(
+                theta="Valor",
+                color="Tributo",
+                tooltip=["Tributo", "Valor"]
+            )
+            st.altair_chart(pie_chart, use_container_width=True)
+
+        # Download Excel
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_xml.to_excel(writer, sheet_name='NF-e XML', index=False)
+            resumo.to_excel(writer, sheet_name='Resumo Tributos', index=False)
         st.download_button("Baixar XML em Excel", data=output.getvalue(),
                            file_name="nfe_xml_extraido.xlsx",
                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
